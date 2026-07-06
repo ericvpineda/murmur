@@ -1,0 +1,36 @@
+name: Sync release branch to master
+
+# action on base branch (target branch merging into)
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'release/*.*.*'
+
+jobs:
+  # job to merge branches upstream to master 
+  merge-to-master:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.nonreply.github.com"
+
+      - name: Merge release to master
+        run:
+          release_branch="${{ github.event.pull_request.base.ref }}"
+          git fetch origin master "$release_branch" 
+          git checkout master
+          git merge "origin/$release_branch" --no-edit
+          git push origin master
